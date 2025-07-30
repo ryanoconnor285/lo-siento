@@ -7,8 +7,9 @@ import {
   FlatList,
   Platform,
   Dimensions,
+  ScrollView,
 } from "react-native";
-import { Audio } from "expo-av";
+import { Audio } from "expo-audio";
 
 // Example phrases
 const phrases = [
@@ -45,7 +46,7 @@ const phrases = [
 ];
 
 export default function App() {
-  const sound = React.useRef(new Audio.Sound());
+  const [sound, setSound] = React.useState(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [screenData, setScreenData] = React.useState(Dimensions.get('window'));
 
@@ -57,12 +58,26 @@ export default function App() {
     return () => subscription?.remove();
   }, []);
 
+  React.useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
   const playSound = async (file) => {
     try {
       setIsLoading(true);
-      await sound.current.unloadAsync();
-      await sound.current.loadAsync(file);
-      await sound.current.playAsync();
+      
+      // Unload previous sound
+      if (sound) {
+        await sound.unloadAsync();
+      }
+      
+      const { sound: newSound } = await Audio.Sound.createAsync(file);
+      setSound(newSound);
+      await newSound.playAsync();
     } catch (error) {
       console.log("Error playing sound", error);
     } finally {
@@ -73,6 +88,7 @@ export default function App() {
   const isWeb = Platform.OS === 'web';
   const isTablet = screenData.width >= 768;
   const isDesktop = screenData.width >= 1024;
+  const isMobile = screenData.width < 768;
 
   return (
     <View style={[styles.container, isWeb && styles.webContainer]}>
@@ -80,38 +96,81 @@ export default function App() {
       <Text style={[styles.subtitle, isWeb && styles.webSubtitle]}>
         Medical Spanish Communication Aid
       </Text>
-      <FlatList
-        data={phrases}
-        keyExtractor={(_, index) => index.toString()}
-        numColumns={isDesktop ? 2 : 1}
-        contentContainerStyle={[
-          styles.listContainer,
-          isWeb && styles.webListContainer,
-          isDesktop && styles.desktopListContainer
-        ]}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[
-              styles.button,
-              isWeb && styles.webButton,
-              isTablet && styles.tabletButton,
-              isDesktop && styles.desktopButton,
-              isLoading && styles.buttonDisabled
-            ]}
-            onPress={() => playSound(item.file)}
-            disabled={isLoading}
-            accessibilityLabel={`Play ${item.label} in Spanish`}
-            accessibilityHint="Double tap to play audio translation"
-          >
-            <Text style={[styles.label, isWeb && styles.webLabel]}>{item.label}</Text>
-            <Text style={[styles.english, isWeb && styles.webEnglish]}>{item.english}</Text>
-            <Text style={[styles.spanish, isWeb && styles.webSpanish]}>{item.spanish}</Text>
-            {isLoading && (
-              <Text style={styles.loadingText}>Loading...</Text>
-            )}
-          </TouchableOpacity>
-        )}
-      />
+      
+      {/* Use ScrollView with flexWrap for mobile, FlatList for desktop */}
+      {isMobile ? (
+        <ScrollView 
+          contentContainerStyle={[
+            styles.scrollContainer,
+            isWeb && styles.webScrollContainer
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {phrases.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.button,
+                isWeb && styles.webButton,
+                isMobile && styles.mobileButton,
+                isLoading && styles.buttonDisabled
+              ]}
+              onPress={() => playSound(item.file)}
+              disabled={isLoading}
+              accessibilityLabel={`Play ${item.label} in Spanish`}
+              accessibilityHint="Double tap to play audio translation"
+            >
+              <Text style={[styles.label, isWeb && styles.webLabel, isMobile && styles.mobileLabel]}>
+                {item.label}
+              </Text>
+              <Text style={[styles.english, isWeb && styles.webEnglish, isMobile && styles.mobileEnglish]}>
+                {item.english}
+              </Text>
+              <Text style={[styles.spanish, isWeb && styles.webSpanish, isMobile && styles.mobileSpanish]}>
+                {item.spanish}
+              </Text>
+              {isLoading && (
+                <Text style={styles.loadingText}>Loading...</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      ) : (
+        <FlatList
+          data={phrases}
+          keyExtractor={(_, index) => index.toString()}
+          numColumns={isDesktop ? 2 : 1}
+          key={isDesktop ? 'desktop' : 'mobile'} // Force re-render when columns change
+          contentContainerStyle={[
+            styles.listContainer,
+            isWeb && styles.webListContainer,
+            isDesktop && styles.desktopListContainer
+          ]}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.button,
+                isWeb && styles.webButton,
+                isTablet && styles.tabletButton,
+                isDesktop && styles.desktopButton,
+                isLoading && styles.buttonDisabled
+              ]}
+              onPress={() => playSound(item.file)}
+              disabled={isLoading}
+              accessibilityLabel={`Play ${item.label} in Spanish`}
+              accessibilityHint="Double tap to play audio translation"
+            >
+              <Text style={[styles.label, isWeb && styles.webLabel]}>{item.label}</Text>
+              <Text style={[styles.english, isWeb && styles.webEnglish]}>{item.english}</Text>
+              <Text style={[styles.spanish, isWeb && styles.webSpanish]}>{item.spanish}</Text>
+              {isLoading && (
+                <Text style={styles.loadingText}>Loading...</Text>
+              )}
+            </TouchableOpacity>
+          )}
+        />
+      )}
+      
       {isWeb && (
         <View style={styles.footer}>
           <Text style={styles.footerText}>
@@ -138,6 +197,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     minHeight: '100vh',
   },
+  scrollContainer: {
+    paddingBottom: 40,
+  },
+  webScrollContainer: {
+    paddingBottom: 60,
+  },
   listContainer: {
     paddingBottom: 40,
   },
@@ -157,6 +222,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  mobileButton: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
   },
   webButton: {
     cursor: 'pointer',
@@ -186,6 +256,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
+  mobileLabel: {
+    fontSize: 16,
+    marginBottom: 6,
+  },
   webLabel: {
     fontSize: 20,
     marginBottom: 10,
@@ -195,6 +269,11 @@ const styles = StyleSheet.create({
     color: "white", 
     marginBottom: 8,
     lineHeight: 22,
+  },
+  mobileEnglish: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 6,
   },
   webEnglish: {
     fontSize: 17,
@@ -206,6 +285,10 @@ const styles = StyleSheet.create({
     color: "white", 
     fontStyle: "italic",
     lineHeight: 22,
+  },
+  mobileSpanish: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   webSpanish: {
     fontSize: 17,
