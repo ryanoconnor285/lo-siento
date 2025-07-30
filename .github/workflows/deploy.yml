@@ -44,6 +44,12 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Copy privacy policy to docs
+        run: cp privacy-policy.html docs/
+
+      - name: Copy documentation index
+        run: cp docs-index.html docs/info.html
+
       - name: Fix paths for GitHub Pages
         run: |
           # Fix absolute paths in index.html to work with GitHub Pages subdirectory

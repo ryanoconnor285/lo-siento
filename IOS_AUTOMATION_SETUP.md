@@ -118,17 +118,17 @@ git push origin v1.0.0
 
 #### Open on iPhone 15 Pro (6.1 inch) Simulator:
 ```bash
-npx expo run:ios --simulator "iPhone 15 Pro"
+npx expo run:ios --device "iPhone 15 Pro"
 ```
 
 #### Open on iPhone 15 Pro Max (6.7 inch) Simulator:
 ```bash
-npx expo run:ios --simulator "iPhone 15 Pro Max"
+npx expo run:ios --device "iPhone 15 Pro Max"
 ```
 
 #### Open on iPad Pro 13-inch Simulator:
 ```bash
-npx expo run:ios --simulator "iPad Pro (13-inch) (M4)"
+npx expo run:ios --device "iPad Pro 13-inch (M4)"
 ```
 
 #### List all available simulators:

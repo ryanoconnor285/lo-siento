@@ -1,16 +1,15 @@
-name: Build Android App
+name: Build Android App (DISABLED)
 
 on:
   workflow_dispatch:
     inputs:
-      release_type:
-        description: 'Release type'
+      enable_build:
+        description: 'Enable Android build (for testing only)'
         required: true
-        default: 'internal'
+        default: 'false'
         type: choice
         options:
-        - internal
-        - play-store
+        - 'false'
 
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -18,6 +17,18 @@ env:
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    if: github.event.inputs.enable_build == 'true'  # Only run if manually enabled
+    
+    steps:
+      - name: Setup Notice
+        run: |
+          echo "⚠️ Android workflow is currently disabled"
+          echo "📋 To enable Android deployment, you need to:"
+          echo "1. Set up Google Play Console account"
+          echo "2. Configure GitHub Secrets (EXPO_TOKEN, GOOGLE_SERVICES_JSON, etc.)"
+          echo "3. Update the workflow triggers in this file"
+          echo "4. Create keystore for app signing"
+          exit 1
     
     steps:
       - name: Checkout

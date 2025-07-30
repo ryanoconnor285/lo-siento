@@ -1,20 +1,35 @@
-name: Build and Deploy iOS App
+name: Build and Deploy iOS App (DISABLED)
+
+# This workflow is currently disabled until iOS setup is complete
+# To enable: uncomment the 'on' section below and configure GitHub secrets
+
+# on:
+#   push:
+#     branches: [ main ]  # Deploy to App Store from main branch
+#     tags:
+#       - 'v*'  # Also trigger on version tags like v1.0.0
+#   workflow_dispatch:
+#     inputs:
+#       release_type:
+#         description: 'Release type'
+#         required: true
+#         default: 'testflight'
+#         type: choice
+#         options:
+#         - testflight
+#         - app-store
 
 on:
-  push:
-    branches: [ main ]  # Deploy to App Store from main branch
-    tags:
-      - 'v*'  # Also trigger on version tags like v1.0.0
+  # Workflow is disabled - no triggers active
   workflow_dispatch:
     inputs:
-      release_type:
-        description: 'Release type'
+      enable_build:
+        description: 'Enable iOS build (for testing only)'
         required: true
-        default: 'testflight'
+        default: 'false'
         type: choice
         options:
-        - testflight
-        - app-store
+        - 'false'
 
 env:
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -22,6 +37,18 @@ env:
 jobs:
   build-ios:
     runs-on: ubuntu-latest
+    if: github.event.inputs.enable_build == 'true'  # Only run if manually enabled
+    
+    steps:
+      - name: Setup Notice
+        run: |
+          echo "⚠️ iOS workflow is currently disabled"
+          echo "📋 To enable iOS deployment, you need to:"
+          echo "1. Set up Apple Developer account and App Store Connect"
+          echo "2. Configure GitHub Secrets (EXPO_TOKEN, APPLE_ID, etc.)"
+          echo "3. Update the workflow triggers in this file"
+          echo "4. See IOS_AUTOMATION_SETUP.md for complete instructions"
+          exit 1
     
     steps:
       - name: Checkout
