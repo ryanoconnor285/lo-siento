@@ -1,0 +1,81 @@
+name: Build and Deploy iOS App
+
+on:
+  push:
+    branches: [ main ]  # Deploy to App Store from main branch
+    tags:
+      - 'v*'  # Also trigger on version tags like v1.0.0
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'testflight'
+        type: choice
+        options:
+        - testflight
+        - app-store
+
+env:
+  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+jobs:
+  build-ios:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Expo CLI and EAS CLI
+        run: |
+          npm install -g @expo/cli
+          npm install -g eas-cli
+
+      - name: Authenticate with Expo
+        run: |
+          eas login --non-interactive
+
+      - name: Configure EAS Build
+        run: |
+          # Create eas.json if it doesn't exist
+          if [ ! -f eas.json ]; then
+            eas build:configure --platform ios --non-interactive
+          fi
+
+      - name: Build iOS app for TestFlight
+        if: github.ref == 'refs/heads/main' || github.event.inputs.release_type == 'testflight'
+        run: |
+          eas build --platform ios --profile preview --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS app for App Store
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.release_type == 'app-store'
+        run: |
+          eas build --platform ios --profile production --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to TestFlight
+        if: github.ref == 'refs/heads/main' || github.event.inputs.release_type == 'testflight'
+        run: |
+          eas submit --platform ios --profile preview --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to App Store
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.release_type == 'app-store'
+        run: |
+          eas submit --platform ios --profile production --non-interactive --wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

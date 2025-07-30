@@ -1,0 +1,150 @@
+# iOS App Store Automation Setup Guide
+
+This guide will help you set up automated iOS builds and deployments to TestFlight and the App Store.
+
+## Prerequisites
+
+### 1. Apple Developer Account
+- Active Apple Developer Program membership ($99/year)
+- App already created in App Store Connect
+- Distribution certificates and provisioning profiles
+
+### 2. Expo Account
+- Expo account (free)
+- EAS Build subscription (required for iOS builds)
+
+## Setup Steps
+
+### Step 1: Install EAS CLI Locally
+```bash
+npm install -g eas-cli
+```
+
+### Step 2: Login to Expo
+```bash
+eas login
+```
+
+### Step 3: Get Your Expo Access Token
+```bash
+eas whoami
+# Then go to https://expo.dev/accounts/[your-username]/settings/access-tokens
+# Create a new token and copy it
+```
+
+### Step 4: Configure GitHub Secrets
+
+Go to your GitHub repository → Settings → Secrets and variables → Actions
+
+Add these secrets:
+
+#### Required Secrets:
+- `EXPO_TOKEN`: Your Expo access token from Step 3
+
+#### Apple-specific Secrets (for App Store submission):
+- `APPLE_ID`: Your Apple ID email
+- `ASC_APP_ID`: Your App Store Connect app ID (found in App Store Connect)
+- `APPLE_TEAM_ID`: Your Apple Team ID (found in Apple Developer Portal)
+
+### Step 5: Configure App Store Connect API (Recommended)
+
+For fully automated submissions, set up App Store Connect API:
+
+1. Go to App Store Connect → Users and Access → Integrations → App Store Connect API
+2. Create a new API key with "Developer" role
+3. Download the .p8 file
+4. Add these additional secrets:
+   - `ASC_API_KEY_ID`: The Key ID from App Store Connect
+   - `ASC_API_ISSUER_ID`: The Issuer ID from App Store Connect
+   - `ASC_API_PRIVATE_KEY`: Contents of the .p8 file (base64 encoded)
+
+### Step 6: Update eas.json (if using API key)
+
+If you're using App Store Connect API, update the submit profiles:
+
+```json
+{
+  "submit": {
+    "preview": {
+      "ios": {
+        "ascApiKeyPath": "./app-store-connect-api-key.p8",
+        "ascApiKeyId": "$ASC_API_KEY_ID",
+        "ascApiKeyIssuerId": "$ASC_API_ISSUER_ID",
+        "ascAppId": "$ASC_APP_ID"
+      }
+    },
+    "production": {
+      "ios": {
+        "ascApiKeyPath": "./app-store-connect-api-key.p8", 
+        "ascApiKeyId": "$ASC_API_KEY_ID",
+        "ascApiKeyIssuerId": "$ASC_API_ISSUER_ID",
+        "ascAppId": "$ASC_APP_ID"
+      }
+    }
+  }
+}
+```
+
+## How It Works
+
+### Automatic Triggers:
+- **TestFlight**: Push to `main` branch → Build → Submit to TestFlight
+- **App Store**: Create a version tag (e.g., `v1.0.0`) → Build → Submit to App Store
+
+### Manual Triggers:
+- Go to GitHub Actions → "Build and Deploy iOS App" → "Run workflow"
+- Choose between TestFlight or App Store submission
+
+## Usage Examples
+
+### Deploy to TestFlight:
+```bash
+git checkout main
+git add .
+git commit -m "Ready for TestFlight"
+git push origin main
+```
+
+### Deploy to App Store:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### Manual Deployment:
+1. Go to GitHub repository
+2. Click "Actions" tab
+3. Select "Build and Deploy iOS App"
+4. Click "Run workflow"
+5. Choose release type (TestFlight or App Store)
+
+## Build Configuration
+
+The workflow uses different build profiles:
+- **preview**: For TestFlight (internal distribution)
+- **production**: For App Store (public distribution)
+
+## Troubleshooting
+
+### Common Issues:
+
+1. **Build fails**: Check that your `app.json` has correct `bundleIdentifier`
+2. **Submission fails**: Verify Apple ID, App Store Connect app ID, and team ID
+3. **Certificate issues**: Run `eas credentials` locally to manage certificates
+4. **API key issues**: Ensure the .p8 file is correctly encoded and uploaded
+
+### Checking Build Status:
+- Monitor builds at: https://expo.dev/accounts/[username]/projects/lo-siento-medical-spanish/builds
+- Check GitHub Actions for workflow logs
+
+## Cost Considerations
+
+- **EAS Build**: ~$99/month for unlimited builds (or pay-per-build)
+- **Apple Developer**: $99/year
+- **GitHub Actions**: Free for public repos (2000 minutes/month for private repos)
+
+## Security Notes
+
+- Never commit API keys or certificates to your repository
+- Use GitHub Secrets for all sensitive information
+- Regularly rotate your API keys and access tokens

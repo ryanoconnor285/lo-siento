@@ -48,7 +48,7 @@ npm start
 
 ## Deployment
 
-### Automated Deployment (GitHub Pages)
+### Web Deployment (GitHub Pages)
 
 The app automatically deploys to GitHub Pages when you push to the `staging` branch:
 
@@ -70,15 +70,34 @@ git push origin staging
 
 The GitHub Action will automatically build and deploy the web version to GitHub Pages.
 
+### iOS Deployment (App Store / TestFlight)
+
+The app can automatically build and deploy to TestFlight and the App Store:
+
+#### Automatic Deployment:
+- **TestFlight**: Push to `main` branch
+- **App Store**: Create a version tag (e.g., `git tag v1.0.0 && git push origin v1.0.0`)
+
+#### Setup Required:
+See [IOS_AUTOMATION_SETUP.md](./IOS_AUTOMATION_SETUP.md) for detailed setup instructions.
+
+You'll need:
+- Apple Developer Account
+- Expo account with EAS Build subscription
+- GitHub Secrets configured (EXPO_TOKEN, APPLE_ID, etc.)
+
 ### Manual Deployment
 
 You can also deploy manually:
 
 ```bash
+# Web
 npm run deploy
-```
 
-This will build the web version and deploy it using gh-pages.
+# iOS (requires EAS CLI)
+eas build --platform ios --profile production
+eas submit --platform ios
+```
 
 ## Project Structure
 
