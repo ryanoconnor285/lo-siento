@@ -30,6 +30,7 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "output": "single",
+      "baseUrl": "/lo-siento/",
       "name": "Lo Siento - Medical Spanish Communication Aid",
       "description": "A medical Spanish communication aid for healthcare professionals",
       "backgroundColor": "#f5f5f5",
@@ -37,7 +38,7 @@
       "lang": "en",
       "orientation": "any",
       "display": "standalone",
-      "startUrl": "/",
+      "startUrl": "/lo-siento/",
       "crossorigin": "anonymous"
     },
     "extra": {

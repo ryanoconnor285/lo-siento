@@ -44,6 +44,12 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Fix paths for GitHub Pages
+        run: |
+          # Fix absolute paths in index.html to work with GitHub Pages subdirectory
+          sed -i 's|href="/|href="/lo-siento/|g' docs/index.html
+          sed -i 's|src="/_expo/|src="/lo-siento/_expo/|g' docs/index.html
+
       - name: Add .nojekyll file
         run: touch docs/.nojekyll
 
