@@ -5,6 +5,7 @@
 # Build outputs
 dist/
 web-build/
+# docs/ - Allow docs folder for GitHub Pages
 
 # Xcode
 build/
