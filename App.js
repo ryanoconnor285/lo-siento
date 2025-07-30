@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  Platform,
+  Dimensions,
 } from "react-native";
 import { Audio } from "expo-av";
 
@@ -44,34 +46,79 @@ const phrases = [
 
 export default function App() {
   const sound = React.useRef(new Audio.Sound());
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [screenData, setScreenData] = React.useState(Dimensions.get('window'));
+
+  React.useEffect(() => {
+    const onChange = (result) => {
+      setScreenData(result.window);
+    };
+    const subscription = Dimensions.addEventListener('change', onChange);
+    return () => subscription?.remove();
+  }, []);
 
   const playSound = async (file) => {
     try {
+      setIsLoading(true);
       await sound.current.unloadAsync();
       await sound.current.loadAsync(file);
       await sound.current.playAsync();
     } catch (error) {
       console.log("Error playing sound", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const isWeb = Platform.OS === 'web';
+  const isTablet = screenData.width >= 768;
+  const isDesktop = screenData.width >= 1024;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>¡Lo Siento!</Text>
+    <View style={[styles.container, isWeb && styles.webContainer]}>
+      <Text style={[styles.heading, isWeb && styles.webHeading]}>¡Lo Siento!</Text>
+      <Text style={[styles.subtitle, isWeb && styles.webSubtitle]}>
+        Medical Spanish Communication Aid
+      </Text>
       <FlatList
         data={phrases}
         keyExtractor={(_, index) => index.toString()}
+        numColumns={isDesktop ? 2 : 1}
+        contentContainerStyle={[
+          styles.listContainer,
+          isWeb && styles.webListContainer,
+          isDesktop && styles.desktopListContainer
+        ]}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.button}
+            style={[
+              styles.button,
+              isWeb && styles.webButton,
+              isTablet && styles.tabletButton,
+              isDesktop && styles.desktopButton,
+              isLoading && styles.buttonDisabled
+            ]}
             onPress={() => playSound(item.file)}
+            disabled={isLoading}
+            accessibilityLabel={`Play ${item.label} in Spanish`}
+            accessibilityHint="Double tap to play audio translation"
           >
-            <Text style={styles.label}>{item.label}</Text>
-            <Text style={styles.english}>{item.english}</Text>
-            <Text style={styles.spanish}>{item.spanish}</Text>
+            <Text style={[styles.label, isWeb && styles.webLabel]}>{item.label}</Text>
+            <Text style={[styles.english, isWeb && styles.webEnglish]}>{item.english}</Text>
+            <Text style={[styles.spanish, isWeb && styles.webSpanish]}>{item.spanish}</Text>
+            {isLoading && (
+              <Text style={styles.loadingText}>Loading...</Text>
+            )}
           </TouchableOpacity>
         )}
       />
+      {isWeb && (
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Click any phrase to hear the Spanish pronunciation
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -79,25 +126,136 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 100,
-    justifyContent: "center",
-    width: "80%",
-    margin: "auto",
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  webContainer: {
+    maxWidth: 1200,
+    alignSelf: 'center',
+    width: '100%',
+    paddingTop: 40,
+    paddingHorizontal: 40,
+    minHeight: '100vh',
+  },
+  listContainer: {
+    paddingBottom: 40,
+  },
+  webListContainer: {
+    paddingBottom: 60,
+  },
+  desktopListContainer: {
+    alignItems: 'stretch',
   },
   button: {
     backgroundColor: "#007AFF",
-    padding: 15,
-    marginBottom: 10,
-    borderRadius: 8,
+    padding: 20,
+    marginBottom: 15,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  label: { fontSize: 16, fontWeight: "bold", color: "white", marginBottom: 5 },
-  english: { fontSize: 14, color: "white" },
-  spanish: { fontSize: 14, color: "white", fontStyle: "italic" },
+  webButton: {
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      backgroundColor: '#0056CC',
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 12px rgba(0, 122, 255, 0.3)',
+    },
+  },
+  tabletButton: {
+    padding: 25,
+    marginBottom: 20,
+  },
+  desktopButton: {
+    flex: 1,
+    marginHorizontal: 10,
+    padding: 25,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  label: { 
+    fontSize: 18, 
+    fontWeight: "bold", 
+    color: "white", 
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  webLabel: {
+    fontSize: 20,
+    marginBottom: 10,
+  },
+  english: { 
+    fontSize: 16, 
+    color: "white", 
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  webEnglish: {
+    fontSize: 17,
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+  spanish: { 
+    fontSize: 16, 
+    color: "white", 
+    fontStyle: "italic",
+    lineHeight: 22,
+  },
+  webSpanish: {
+    fontSize: 17,
+    lineHeight: 24,
+    fontWeight: '500',
+  },
   heading: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "bold",
     textAlign: "center",
+    marginBottom: 20,
+    color: "#d32f2f",
+  },
+  webHeading: {
+    fontSize: 48,
+    marginBottom: 10,
+    fontFamily: Platform.select({
+      web: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      default: undefined,
+    }),
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: "center",
     marginBottom: 30,
-    color: "red", // optional, matches your button color
+    color: "#666",
+    fontStyle: 'italic',
+  },
+  webSubtitle: {
+    fontSize: 20,
+    marginBottom: 40,
+    color: "#555",
+  },
+  loadingText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 14,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  footer: {
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    marginTop: 20,
+  },
+  footerText: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 16,
+    fontStyle: 'italic',
   },
 });
