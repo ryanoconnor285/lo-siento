@@ -9,7 +9,7 @@ import {
   Dimensions,
   ScrollView,
 } from "react-native";
-import { Audio } from "expo-audio";
+import { Audio } from "expo-av";
 
 // Example phrases
 const phrases = [
@@ -46,7 +46,7 @@ const phrases = [
 ];
 
 export default function App() {
-  const [sound, setSound] = React.useState(null);
+  const sound = React.useRef(new Audio.Sound());
   const [isLoading, setIsLoading] = React.useState(false);
   const [screenData, setScreenData] = React.useState(Dimensions.get('window'));
 
@@ -59,25 +59,24 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
+    return () => {
+      // Cleanup sound on unmount
+      if (sound.current) {
+        sound.current.unloadAsync();
+      }
+    };
+  }, []);
 
   const playSound = async (file) => {
     try {
       setIsLoading(true);
       
       // Unload previous sound
-      if (sound) {
-        await sound.unloadAsync();
-      }
+      await sound.current.unloadAsync();
       
-      const { sound: newSound } = await Audio.Sound.createAsync(file);
-      setSound(newSound);
-      await newSound.playAsync();
+      // Load and play new sound
+      await sound.current.loadAsync(file);
+      await sound.current.playAsync();
     } catch (error) {
       console.log("Error playing sound", error);
     } finally {
