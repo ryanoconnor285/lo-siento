@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Audio } from "expo-av";
 
-// Example phrases
+// Example phrases - using asset requires that work with Expo web bundling
 const phrases = [
   {
     label: "Intro",

@@ -55,6 +55,17 @@ jobs:
           # Fix absolute paths in index.html to work with GitHub Pages subdirectory
           sed -i 's|href="/|href="/lo-siento/|g' docs/index.html
           sed -i 's|src="/_expo/|src="/lo-siento/_expo/|g' docs/index.html
+          
+          # Fix double assets folder issue
+          if [ -d "docs/assets/assets" ]; then
+            # Move files from assets/assets to just assets
+            mv docs/assets/assets/* docs/assets/ 2>/dev/null || true
+            # Remove the extra assets folder
+            rmdir docs/assets/assets 2>/dev/null || true
+          fi
+          
+          # Fix asset paths in JS files (Ubuntu/Linux sed syntax)
+          find docs -name "*.js" -exec sed -i 's|assets/assets/|assets/|g' {} \;
 
       - name: Add .nojekyll file
         run: touch docs/.nojekyll
