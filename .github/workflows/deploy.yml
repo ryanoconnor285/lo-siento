@@ -64,7 +64,8 @@ jobs:
             rmdir docs/assets/assets 2>/dev/null || true
           fi
           
-          # Fix asset paths in JS files (Ubuntu/Linux sed syntax)
+          # Fix asset paths in JS files - this is the key fix!
+          find docs -name "*.js" -exec sed -i 's|"/assets/|"/lo-siento/assets/|g' {} \;
           find docs -name "*.js" -exec sed -i 's|assets/assets/|assets/|g' {} \;
 
       - name: Add .nojekyll file
